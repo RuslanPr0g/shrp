@@ -47,6 +47,22 @@ entries — don't add a stateful scripting host (e.g. `dotnet-script`) to
 get that without discussing it first; it's a real dependency and
 architecture change, not a small addition.
 
+## Before you finish any change
+
+Every change must be logged in `CHANGELOG.md` (under `Unreleased`, in
+the right Added/Changed/Fixed/Removed section). No exceptions — even a
+one-line fix gets an entry.
+
+Also check every doc below and update any that the change affects. Go
+through the list explicitly rather than guessing which ones are
+relevant:
+
+- `README.md`
+- `CLAUDE.md` (this file)
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `CHANGELOG.md`
+
 ## Testing
 
 No test framework — it's one shell function. Before committing a change to

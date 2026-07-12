@@ -53,8 +53,9 @@ feat: support running an existing .cs file in place
 ## Pull requests
 
 - Keep PRs scoped to one change.
-- Update `README.md` (and `CLAUDE.md` if the change affects conventions or
-  safety behavior) when user-facing behavior changes.
+- Add an entry to `CHANGELOG.md` for every change, no exceptions.
+- Check whether `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, or `SECURITY.md`
+  need updating too — don't assume only one doc is affected.
 - Explain *why* in the PR description, not just what changed.
 
 ## Reporting bugs / requesting features

@@ -19,6 +19,9 @@ otherwise.
   by `test/smoke.sh`.
 - `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, this changelog, issue/PR
   templates, and CI (ShellCheck + smoke tests) for contributor workflow.
+- `CLAUDE.md` rule: every change must get a changelog entry, and all docs
+  (listed there) must be checked for needed updates before a change is
+  considered done.
 
 ### Changed
 
