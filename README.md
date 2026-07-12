@@ -1,5 +1,8 @@
 # shrp
 
+[![CI](https://github.com/RuslanPr0g/shrp/actions/workflows/ci.yml/badge.svg)](https://github.com/RuslanPr0g/shrp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Run C# instantly from your terminal — no `.csproj`, no `dotnet new`, no ceremony.
 
 ```sh
@@ -80,6 +83,13 @@ rm -rf ~/.shrp
 ```
 
 …and remove the `source` line from your `~/.zshrc`.
+
+## Contributing
+
+Bug reports, feature requests, and PRs are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see
+[SECURITY.md](SECURITY.md). Notable changes are tracked in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
