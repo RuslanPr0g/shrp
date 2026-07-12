@@ -10,11 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # cs.zsh is zsh, which ShellCheck doesn't support — only lint install.sh
+      # cs.zsh and test/smoke.sh are zsh, which ShellCheck doesn't support —
+      # only lint install.sh (matched by name, since ignore_paths only
+      # excludes directories, not individual files).
       - uses: ludeeus/action-shellcheck@master
         with:
           scandir: '.'
-          ignore_paths: cs.zsh
+          ignore_names: 'cs.zsh smoke.sh'
 
   smoke-test:
     runs-on: ubuntu-latest

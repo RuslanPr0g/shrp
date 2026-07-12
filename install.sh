@@ -11,6 +11,7 @@ SOURCE_LINE="source \"$INSTALL_DIR/cs.zsh\""
 mkdir -p "$INSTALL_DIR"
 
 # Prefer a local copy when running from a cloned repo; otherwise download.
+# shellcheck disable=SC1007
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ -f "$script_dir/cs.zsh" ]; then
   cp "$script_dir/cs.zsh" "$INSTALL_DIR/cs.zsh"
