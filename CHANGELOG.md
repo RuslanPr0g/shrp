@@ -25,6 +25,17 @@ otherwise.
   `;` appended automatically, so `cs 'Console.WriteLine(1+1)'` works
   without remembering the trailing semicolon. Multi-line input is left
   untouched.
+- `cs --smart`: a second, opt-in interactive mode with persistent
+  variables across entries and real Tab completion (backed by Roslyn's
+  scripting and completion APIs via a new long-lived companion process,
+  `cs-roslyn-host.cs`, shipped by `install.sh` alongside `cs.zsh`). Runs
+  each entry as soon as its brackets balance (a blank line still forces a
+  run regardless), rather than always waiting for a blank line like the
+  default REPL. Editing uses a keymap based on the plain `emacs` keymap,
+  not the user's live one, so personal zsh plugins (e.g.
+  `zsh-autosuggestions`) don't leak in. The default `cs` REPL is
+  unchanged — still stateless, still zero extra dependencies; `--smart`
+  pulls Roslyn NuGet packages on first run.
 
 ### Changed
 
@@ -33,6 +44,10 @@ otherwise.
   never deletes it. Earlier cleanup logic (temp directories, deletion
   guards against symlink swaps and `..` traversal) was removed entirely —
   see the Safety section in `README.md` for why.
+- `spec/support/repl_harness.py`: added `REPL_HARNESS_INTERACTIVE=1` (launches
+  `zsh -f -i` instead of plain `zsh -c` so zle/`vared` initialize, needed
+  to test `--smart`'s Tab completion) and a `RAW:`-prefixed input-line
+  convention for sending keystrokes with no trailing Enter.
 - Replaced the hand-rolled `test/smoke.sh` pass/fail script with a real
   [ShellSpec](https://shellspec.info/) suite (`spec/cs_spec.sh`,
   BDD-style `Describe`/`It`). `run-tests.sh` (repo root) is now the single
