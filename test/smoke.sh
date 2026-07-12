@@ -38,7 +38,6 @@ check "help flag" "cs - run C# instantly with dotnet's file-based apps (.NET 10+
 f="$(mktemp "${TMPDIR:-/tmp}/smoke.XXXXXX.cs")"
 print -r -- 'Console.WriteLine("from file");' > "$f"
 check "existing .cs file" "from file" "$(cs "$f")"
-rm -f "$f"
 
 print -- "-- $pass passed, $fail failed --"
 [[ $fail -eq 0 ]]
