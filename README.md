@@ -105,6 +105,20 @@ If your snippet is a single line and doesn't already end in `;`, `{`, or `}`, a 
 
 The first run of a given snippet includes compilation; dotnet caches build artifacts elsewhere, so repeated runs of the same file are fast.
 
+## Testing
+
+The test suite uses [ShellSpec](https://shellspec.info/). Run it with:
+
+```sh
+./test/run.sh
+```
+
+This uses your system's `shellspec` if it's already on `PATH`; otherwise it
+fetches a pinned release into `test/.shellspec-bin` (via `git clone`, not a
+piped installer script) and uses that. Requires .NET SDK 10+ and zsh, same
+as `cs` itself; `python3` is needed too, for the pty-based tests that cover
+the interactive REPL and `-p` (see `test/repl_harness.py`).
+
 ## Safety
 
 `shrp` never deletes anything. Earlier versions tried to clean up their temp files, which meant shipping deletion logic (`rm`, directory ownership/symlink checks, `..`-traversal guards) for files a few hundred bytes in size that `/tmp` clears out on its own — most systems mount `/tmp` as tmpfs or sweep it on reboot. Deleting was pure risk for no real benefit, so it was removed instead of hardened further. `cs` only ever writes new files under `$TMPDIR`/`/tmp`; it never touches an existing path unless you explicitly pass it (`cs script.cs`).

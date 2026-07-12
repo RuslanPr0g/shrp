@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Drives cs's interactive REPL through a real pty, since -t 0 (tty
-detection) can't be faked with a plain pipe. Used by test/smoke.sh.
+"""Drives cs through a real pty, since -t 0 (tty detection) can't be
+faked with a plain pipe. Used by the ShellSpec suite in spec/ to test
+the interactive REPL and -p's tty-forced behavior.
 
-Usage: repl_harness.py <repo_dir> <input_line> [<input_line> ...]
+Usage: repl_harness.py <repo_dir> <cs_invocation> [<input_line> ...]
+cs_invocation is the full command, e.g. "cs" or "cs -p".
 Each input_line is sent followed by Enter, in order.
 """
 import os
@@ -12,7 +14,8 @@ import sys
 import time
 
 repo_dir = sys.argv[1]
-input_lines = sys.argv[2:]
+invocation = sys.argv[2]
+input_lines = sys.argv[3:]
 
 
 def run(cmd, inputs, timeout=15, gap=3.0):
@@ -47,6 +50,6 @@ def run(cmd, inputs, timeout=15, gap=3.0):
     return output
 
 
-cmd = f'source "{repo_dir}/cs.zsh"; cs'
+cmd = f'source "{repo_dir}/cs.zsh"; {invocation}'
 inputs = [line + "\n" for line in input_lines]
 print(run(cmd, inputs).decode(errors="replace"))

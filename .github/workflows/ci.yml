@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # cs.zsh and test/smoke.sh are zsh, which ShellCheck doesn't support —
-      # only lint install.sh (matched by name, since ignore_paths only
-      # excludes directories, not individual files).
+      # cs.zsh is zsh, which ShellCheck doesn't support — only lint
+      # install.sh and test/run.sh (matched by name, since ignore_paths
+      # only excludes directories, not individual files).
       - uses: ludeeus/action-shellcheck@master
         with:
           scandir: '.'
-          ignore_names: 'cs.zsh smoke.sh'
+          ignore_names: 'cs.zsh'
 
-  smoke-test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,5 +27,5 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Install zsh
         run: sudo apt-get update && sudo apt-get install -y zsh
-      - name: Run smoke tests
-        run: zsh test/smoke.sh
+      - name: Run test suite
+        run: ./test/run.sh

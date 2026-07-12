@@ -17,17 +17,22 @@ cs 'Console.WriteLine("testing");'
 
 ## Before opening a PR
 
-Run the smoke tests:
+Run the test suite ([ShellSpec](https://shellspec.info/); see `spec/`):
 
 ```sh
-zsh test/smoke.sh
+./test/run.sh
 ```
 
+This fetches ShellSpec itself if it's not already on your `PATH` — see the
+README's Testing section for details. `python3` is required for the
+pty-based tests covering the interactive REPL and `-p`.
+
 If you have [ShellCheck](https://www.shellcheck.net/) installed, run it
-against `install.sh` (it doesn't support zsh, so it can't check `cs.zsh`):
+against `install.sh` and `test/run.sh` (it doesn't support zsh, so it can't
+check `cs.zsh`):
 
 ```sh
-shellcheck install.sh
+shellcheck install.sh test/run.sh
 ```
 
 ## Commit messages

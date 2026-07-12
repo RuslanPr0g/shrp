@@ -75,24 +75,38 @@ relevant:
 
 ## Testing
 
-No test framework — it's one shell function. Before committing a change to
-`cs.zsh` or `install.sh`, run:
+Tests are [ShellSpec](https://shellspec.info/) specs in `spec/cs_spec.sh`
+(`Describe`/`It`, BDD-style). Before committing a change to `cs.zsh` or
+`install.sh`, run:
 
 ```sh
-zsh test/smoke.sh
+./test/run.sh
 ```
 
-This exercises the inline/piped/file/help/`-p` code paths, plus the
-interactive REPL via `test/repl_harness.py` (drives a real pty with
-Python's `pty` module, since `-t 0` can't be faked with a plain pipe — see
-that file for why). Extend the smoke test when you add behavior; don't add
-a heavier test framework for a project this size.
+`test/run.sh` uses `shellspec` from `PATH` if present, otherwise fetches a
+pinned tag into `test/.shellspec-bin` via `git clone` — **never** switch
+this to a curl-piped installer script; that's an unreviewed-code-execution
+pattern and will get blocked/rejected. If you need to bump the pinned
+version, edit `SHELLSPEC_VERSION` in `test/run.sh`, and re-run the suite
+locally against it before pushing.
+
+`Include ./cs.zsh` sources the function directly into each spec run, so
+most specs use `When call cs ...` (in-process, fast). The REPL and `-p`'s
+tty-forced behavior can't be exercised that way — ShellSpec's `Data` block
+still looks like a pipe to `-t 0`, not a terminal — so those specs use
+`test/repl_harness.py`, a small pty driver invoked via `When run`. Extend
+`spec/cs_spec.sh` (and `repl_harness.py` if a new pty scenario is needed)
+when you add behavior; don't reach for a different framework or add a
+second one for a project this size.
 
 ## Files
 
 - `cs.zsh` — the `cs` function and `_cs_repl` (interactive mode)
 - `install.sh` — installer (downloads or copies `cs.zsh`, wires `.zshrc`)
-- `test/smoke.sh` — manual/CI smoke tests
-- `test/repl_harness.py` — pty driver used by smoke.sh to test the REPL
-- `.github/workflows/ci.yml` — shellcheck (install.sh only; ShellCheck
-  doesn't support zsh) + the smoke test on a runner with dotnet 10
+- `.shellspec` — ShellSpec config (`--shell zsh`, etc.)
+- `spec/cs_spec.sh` — the test suite
+- `spec/spec_helper.sh` — ShellSpec's required helper file (currently empty)
+- `test/run.sh` — fetches/runs ShellSpec; what CI and contributors call
+- `test/repl_harness.py` — pty driver used by specs to test the REPL and `-p`
+- `.github/workflows/ci.yml` — ShellCheck (`install.sh`, `test/run.sh`;
+  ShellCheck doesn't support zsh) + `test/run.sh` on a runner with dotnet 10

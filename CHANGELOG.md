@@ -35,6 +35,16 @@ otherwise.
   never deletes it. Earlier cleanup logic (temp directories, deletion
   guards against symlink swaps and `..` traversal) was removed entirely —
   see the Safety section in `README.md` for why.
+- Replaced the hand-rolled `test/smoke.sh` pass/fail script with a real
+  [ShellSpec](https://shellspec.info/) suite (`spec/cs_spec.sh`,
+  BDD-style `Describe`/`It`). `test/run.sh` is now the single entry point
+  for running tests locally or in CI — it uses `shellspec` from `PATH` if
+  present, otherwise fetches a pinned tag via `git clone` into
+  `test/.shellspec-bin` (deliberately not a piped installer script).
+  `test/repl_harness.py` was generalized to take the invocation
+  (`cs` or `cs -p`) as an argument, so it now also covers `-p`'s
+  tty-forced usage message, which the old smoke test couldn't test at
+  all.
 
 ## 0.1.0 — initial release
 
