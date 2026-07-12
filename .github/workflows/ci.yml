@@ -10,13 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # cs.zsh is zsh, which ShellCheck doesn't support — only lint
-      # install.sh and test/run.sh (matched by name, since ignore_paths
-      # only excludes directories, not individual files).
+      # cs.zsh is zsh (ShellCheck doesn't support it) and spec/*.sh are
+      # ShellSpec DSL, not standalone scripts (no shebang by design,
+      # run via shellspec's own interpreter) — install.sh and
+      # run-tests.sh are the real ShellCheck targets here.
       - uses: ludeeus/action-shellcheck@master
         with:
           scandir: '.'
           ignore_names: 'cs.zsh'
+          ignore_paths: 'spec'
 
   test:
     runs-on: ubuntu-latest
@@ -28,4 +30,4 @@ jobs:
       - name: Install zsh
         run: sudo apt-get update && sudo apt-get install -y zsh
       - name: Run test suite
-        run: ./test/run.sh
+        run: ./run-tests.sh

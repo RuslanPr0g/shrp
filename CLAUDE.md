@@ -80,33 +80,40 @@ Tests are [ShellSpec](https://shellspec.info/) specs in `spec/cs_spec.sh`
 `install.sh`, run:
 
 ```sh
-./test/run.sh
+./run-tests.sh
 ```
 
-`test/run.sh` uses `shellspec` from `PATH` if present, otherwise fetches a
-pinned tag into `test/.shellspec-bin` via `git clone` — **never** switch
-this to a curl-piped installer script; that's an unreviewed-code-execution
-pattern and will get blocked/rejected. If you need to bump the pinned
-version, edit `SHELLSPEC_VERSION` in `test/run.sh`, and re-run the suite
-locally against it before pushing.
+`run-tests.sh` (repo root, alongside `install.sh`) uses `shellspec` from
+`PATH` if present, otherwise fetches a pinned tag into `.shellspec-bin`
+via `git clone` — **never** switch this to a curl-piped installer script;
+that's an unreviewed-code-execution pattern and will get blocked/rejected.
+If you need to bump the pinned version, edit `SHELLSPEC_VERSION` in
+`run-tests.sh`, and re-run the suite locally against it before pushing.
 
 `Include ./cs.zsh` sources the function directly into each spec run, so
 most specs use `When call cs ...` (in-process, fast). The REPL and `-p`'s
 tty-forced behavior can't be exercised that way — ShellSpec's `Data` block
 still looks like a pipe to `-t 0`, not a terminal — so those specs use
-`test/repl_harness.py`, a small pty driver invoked via `When run`. Extend
-`spec/cs_spec.sh` (and `repl_harness.py` if a new pty scenario is needed)
-when you add behavior; don't reach for a different framework or add a
-second one for a project this size.
+`spec/support/repl_harness.py`, a small pty driver invoked via `When run`.
+Extend `spec/cs_spec.sh` (and `repl_harness.py` if a new pty scenario is
+needed) when you add behavior; don't reach for a different framework or
+add a second one for a project this size.
+
+Everything test-related lives under `spec/` (ShellSpec's own convention,
+including `spec/support/` for helper scripts) plus the single
+`run-tests.sh` entry point at the repo root next to `install.sh` — there
+is no separate `test/` directory; don't recreate one.
 
 ## Files
 
 - `cs.zsh` — the `cs` function and `_cs_repl` (interactive mode)
 - `install.sh` — installer (downloads or copies `cs.zsh`, wires `.zshrc`)
+- `run-tests.sh` — fetches/runs ShellSpec; what CI and contributors call
 - `.shellspec` — ShellSpec config (`--shell zsh`, etc.)
 - `spec/cs_spec.sh` — the test suite
 - `spec/spec_helper.sh` — ShellSpec's required helper file (currently empty)
-- `test/run.sh` — fetches/runs ShellSpec; what CI and contributors call
-- `test/repl_harness.py` — pty driver used by specs to test the REPL and `-p`
-- `.github/workflows/ci.yml` — ShellCheck (`install.sh`, `test/run.sh`;
-  ShellCheck doesn't support zsh) + `test/run.sh` on a runner with dotnet 10
+- `spec/support/repl_harness.py` — pty driver used by specs to test the
+  REPL and `-p`
+- `.github/workflows/ci.yml` — ShellCheck (`install.sh`, `run-tests.sh`;
+  ShellCheck doesn't support zsh, and `spec/*.sh` are ShellSpec DSL, not
+  standalone scripts) + `run-tests.sh` on a runner with dotnet 10

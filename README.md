@@ -107,17 +107,18 @@ The first run of a given snippet includes compilation; dotnet caches build artif
 
 ## Testing
 
-The test suite uses [ShellSpec](https://shellspec.info/). Run it with:
+The test suite ([ShellSpec](https://shellspec.info/) specs in `spec/`) is
+run with:
 
 ```sh
-./test/run.sh
+./run-tests.sh
 ```
 
 This uses your system's `shellspec` if it's already on `PATH`; otherwise it
-fetches a pinned release into `test/.shellspec-bin` (via `git clone`, not a
+fetches a pinned release into `.shellspec-bin` (via `git clone`, not a
 piped installer script) and uses that. Requires .NET SDK 10+ and zsh, same
 as `cs` itself; `python3` is needed too, for the pty-based tests that cover
-the interactive REPL and `-p` (see `test/repl_harness.py`).
+the interactive REPL and `-p` (see `spec/support/repl_harness.py`).
 
 ## Safety
 

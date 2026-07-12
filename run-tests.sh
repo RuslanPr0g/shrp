@@ -1,8 +1,8 @@
 #!/bin/sh
 # Runs the ShellSpec test suite (spec/), fetching ShellSpec itself into
-# test/.shellspec-bin if it isn't already on PATH. Pinned to a released
-# tag via `git clone`, not curl-piped-into-sh, so nothing unreviewed
-# runs as part of testing.
+# .shellspec-bin if it isn't already on PATH. Pinned to a released tag
+# via `git clone`, not curl-piped-into-sh, so nothing unreviewed runs
+# as part of testing.
 set -eu
 
 SHELLSPEC_VERSION="0.28.1"

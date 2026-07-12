@@ -15,8 +15,6 @@ otherwise.
   across entries.
 - `-p` flag: forces the old "print usage and exit" behavior instead of
   entering the REPL.
-- `test/repl_harness.py`: pty-based test driver so the REPL is covered
-  by `test/smoke.sh`.
 - `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, this changelog, issue/PR
   templates, and CI (ShellCheck + smoke tests) for contributor workflow.
 - `CLAUDE.md` rule: every change must get a changelog entry, and all docs
@@ -37,14 +35,15 @@ otherwise.
   see the Safety section in `README.md` for why.
 - Replaced the hand-rolled `test/smoke.sh` pass/fail script with a real
   [ShellSpec](https://shellspec.info/) suite (`spec/cs_spec.sh`,
-  BDD-style `Describe`/`It`). `test/run.sh` is now the single entry point
-  for running tests locally or in CI — it uses `shellspec` from `PATH` if
-  present, otherwise fetches a pinned tag via `git clone` into
-  `test/.shellspec-bin` (deliberately not a piped installer script).
-  `test/repl_harness.py` was generalized to take the invocation
-  (`cs` or `cs -p`) as an argument, so it now also covers `-p`'s
-  tty-forced usage message, which the old smoke test couldn't test at
-  all.
+  BDD-style `Describe`/`It`). `run-tests.sh` (repo root) is now the single
+  entry point for running tests locally or in CI — it uses `shellspec`
+  from `PATH` if present, otherwise fetches a pinned tag via `git clone`
+  into `.shellspec-bin` (deliberately not a piped installer script). The
+  pty test driver moved to `spec/support/repl_harness.py` and was
+  generalized to take the invocation (`cs` or `cs -p`) as an argument, so
+  it now also covers `-p`'s tty-forced usage message, which the old smoke
+  test couldn't test at all. Everything test-related now lives under
+  `spec/` plus `run-tests.sh` — no separate `test/` directory.
 
 ## 0.1.0 — initial release
 

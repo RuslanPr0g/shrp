@@ -74,7 +74,7 @@ Describe 'cs (real pty, since -t 0 cannot be faked with a pipe)'
   pty_run() {
     invocation="$1"
     shift
-    python3 "$SHELLSPEC_PROJECT_ROOT/test/repl_harness.py" "$SHELLSPEC_PROJECT_ROOT" "$invocation" "$@"
+    python3 "$SHELLSPEC_PROJECT_ROOT/spec/support/repl_harness.py" "$SHELLSPEC_PROJECT_ROOT" "$invocation" "$@"
   }
 
   It 'REPL runs a snippet after a blank line'

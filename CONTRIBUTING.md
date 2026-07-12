@@ -20,7 +20,7 @@ cs 'Console.WriteLine("testing");'
 Run the test suite ([ShellSpec](https://shellspec.info/); see `spec/`):
 
 ```sh
-./test/run.sh
+./run-tests.sh
 ```
 
 This fetches ShellSpec itself if it's not already on your `PATH` — see the
@@ -28,11 +28,12 @@ README's Testing section for details. `python3` is required for the
 pty-based tests covering the interactive REPL and `-p`.
 
 If you have [ShellCheck](https://www.shellcheck.net/) installed, run it
-against `install.sh` and `test/run.sh` (it doesn't support zsh, so it can't
-check `cs.zsh`):
+against `install.sh` and `run-tests.sh` (it doesn't support zsh, so it
+can't check `cs.zsh`, and `spec/*.sh` are ShellSpec DSL, not standalone
+scripts):
 
 ```sh
-shellcheck install.sh test/run.sh
+shellcheck install.sh run-tests.sh
 ```
 
 ## Commit messages

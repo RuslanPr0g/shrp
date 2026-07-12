@@ -4,7 +4,7 @@
 
 ## Testing
 
-- [ ] `zsh test/smoke.sh` passes
+- [ ] `./run-tests.sh` passes
 - [ ] Tested manually with `cs '...'`
 
 ## Checklist
