@@ -6,17 +6,28 @@
 #   cs <<'EOF' ... EOF              # heredoc for multiline code
 #   cs script.cs                    # run an existing .cs file
 #   cs -h | --help                  # show help
-# Deletes $1 only if it looks exactly like a dir this script created:
-# non-empty, not a symlink, and rooted under our own cs.XXXXXX temp prefix.
-# Guards against rm -rf firing on "", "/", $HOME, or a swapped-out symlink.
+# Deletes $1 only if it is provably the scratch dir this script created:
+#  - non-empty path, matches our cs.XXXXXX prefix under the temp base
+#  - a real directory, not a symlink
+#  - owned by the current user
+#  - resolves (realpath) to a location still under the temp base
+# Cleanup is non-recursive by design: remove the one file we wrote, then
+# rmdir. Anything unexpected inside the dir means we leave it alone and
+# say so, rather than reach for rm -rf.
 _cs_safe_rm_tmpdir() {
   emulate -L zsh
-  local d="$1" base="${2:-${TMPDIR:-/tmp}}"
+  local d="$1" base="${2:-${TMPDIR:-/tmp}}" rd rb
   base="${base%/}"
   [[ -n "$d" && -n "$base" ]] || return 0
   [[ "$d" == "$base"/cs.??????* ]] || return 0
   [[ -d "$d" && ! -L "$d" ]] || return 0
-  rm -rf -- "$d"
+  [[ -O "$d" ]] || return 0
+  rd="${d:A}" rb="${base:A}"
+  [[ -n "$rd" && -n "$rb" && "$rd" == "$rb"/cs.?????? ]] || return 0
+  rm -f -- "$d/main.cs"
+  if ! rmdir -- "$d" 2>/dev/null; then
+    print -u2 "cs: temp dir $d contains unexpected files; not removing it"
+  fi
 }
 
 cs() {
@@ -63,7 +74,7 @@ USAGE
       return 1
     }
     # Belt-and-braces: confirm mktemp actually gave us what we asked for
-    # before wiring it into a trap that will rm -rf it.
+    # before wiring it into the cleanup trap.
     if [[ "$tmpdir" != "${tmpbase%/}"/cs.??????* || ! -d "$tmpdir" || -L "$tmpdir" ]]; then
       print -u2 "cs: unexpected temp directory from mktemp, refusing to continue"
       return 1
