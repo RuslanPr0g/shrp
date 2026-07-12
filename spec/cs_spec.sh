@@ -92,3 +92,25 @@ Describe 'cs (real pty, since -t 0 cannot be faked with a pipe)'
     The output should include "no code supplied"
   End
 End
+
+Describe 'cs --smart (persistent scope + completion; needs a real interactive zsh for zle/vared)'
+  pty_run_smart() {
+    invocation="$1"
+    shift
+    SHRP_HOME="$SHELLSPEC_PROJECT_ROOT" \
+      REPL_HARNESS_INTERACTIVE=1 \
+      REPL_HARNESS_TIMEOUT="${REPL_HARNESS_TIMEOUT:-90}" \
+      REPL_HARNESS_GAP="${REPL_HARNESS_GAP:-6}" \
+      python3 "$SHELLSPEC_PROJECT_ROOT/spec/support/repl_harness.py" "$SHELLSPEC_PROJECT_ROOT" "$invocation" "$@"
+  }
+
+  It 'persists a variable across two entries'
+    When run pty_run_smart "cs --smart" 'int x = 5;' '' 'x + 1' '' exit
+    The output should include "=> 6"
+  End
+
+  It 'Tab surfaces real member completions after "Console."'
+    When run pty_run_smart "cs --smart" 'RAW:Console.' $'RAW:\t' '' exit
+    The output should include "WriteLine"
+  End
+End

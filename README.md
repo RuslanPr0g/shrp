@@ -66,6 +66,9 @@ cs script.cs
 # Non-interactive: print usage instead of entering the REPL
 cs -p
 
+# Smart REPL: persistent variables + Tab completion
+cs --smart
+
 # Help
 cs --help
 ```
@@ -97,9 +100,62 @@ context), pass `-p`.
 The exit code of your program is passed through when running a single
 snippet, so `cs '...' && next-thing` works as expected.
 
+### Smart interactive mode
+
+`cs --smart` is a second, opt-in REPL for when the scratchpad above isn't
+enough — variables persist across entries, and Tab gives real semantic
+completions:
+
+```
+$ cs --smart
+shrp smart interactive — variables persist, Tab completes. Ctrl-D or 'exit' quits.
+(first run restores Roslyn NuGet packages — can take a minute)
+smart> int x = 5;
+smart> x + 1
+=> 6
+smart> Console.<Tab>
+WriteLine, Write, ReadLine, ...
+```
+
+How it differs from the default REPL:
+
+- **Variables persist.** Unlike `cs`'s REPL (a fresh `dotnet run` per entry),
+  `--smart` keeps one long-lived process alive for the session, so state
+  from earlier entries is still there.
+- **Runs on Enter, not on a blank line.** The default REPL waits for a
+  blank line before running what you typed (it has to, since it batches
+  possibly-multi-statement snippets into one `dotnet run`). `--smart`
+  runs each entry the moment its brackets balance — a plain statement
+  runs immediately, `if (x) {` keeps prompting with `... ` until the
+  matching `}` closes it. A blank line still forces a run of whatever's
+  accumulated, as an escape hatch.
+- **Consistent editing regardless of your zsh plugins.** Tab/Ctrl-D are
+  bound in a keymap based on the plain built-in `emacs` keymap, not your
+  shell's live one — so e.g. `zsh-autosuggestions`-style ghost-text
+  suggestions from your command history won't show up while you're
+  typing C#.
+- **Tab completes on real semantic info** (via Roslyn's completion API),
+  not a hardcoded keyword list — it knows the members of whatever type
+  you're dotting into, including your own declared variables.
+- **No auto-semicolon.** The default REPL appends a missing `;` to a
+  single-line entry; `--smart` doesn't, because unlike a full file-based
+  app, `x + 1` here is a legal value-yielding expression on its own —
+  appending `;` would make it an illegal statement instead of something
+  that prints `=> 6`.
+- **Extra dependency, opt-in only.** First run restores several
+  `Microsoft.CodeAnalysis.*` NuGet packages (can take up to a minute);
+  after that it's cached like any other `dotnet run`. The plain `cs` REPL
+  is untouched and still has zero extra dependencies.
+- **Known limitation:** Tab completion inserts the full suggestion at the
+  cursor; it doesn't yet replace an already-partially-typed prefix (e.g.
+  `Console.Wri<Tab>` won't trim `Wri` first).
+
+Needs `cs-roslyn-host.cs` installed alongside `cs.zsh` (the installer
+fetches it automatically).
+
 ## How it works
 
-`cs` writes your snippet to a uniquely-named file (`$TMPDIR/cs.XXXXXX.cs`, via `mktemp`) and runs `dotnet run <file>`, streaming the output straight through. Passing an existing `.cs` file skips the temp file entirely and runs your file in place.
+`cs` writes your snippet to a uniquely-named file (`$TMPDIR/cs.XXXXXX.cs`, via `mktemp`) and runs `dotnet run <file>`, streaming the output straight through. Passing an existing `.cs` file skips the temp file entirely and runs your file in place. (`cs --smart` works differently — see "Smart interactive mode" above.)
 
 If your snippet is a single line and doesn't already end in `;`, `{`, or `}`, a `;` is appended automatically. Multi-line snippets (heredoc, multi-line REPL entries, existing files) are never touched this way — guessing where a semicolon belongs across statements isn't safe, so a missing one there is still a normal compiler error.
 
@@ -118,7 +174,9 @@ This uses your system's `shellspec` if it's already on `PATH`; otherwise it
 fetches a pinned release into `.shellspec-bin` (via `git clone`, not a
 piped installer script) and uses that. Requires .NET SDK 10+ and zsh, same
 as `cs` itself; `python3` is needed too, for the pty-based tests that cover
-the interactive REPL and `-p` (see `spec/support/repl_harness.py`).
+the interactive REPL, `-p`, and `--smart` (see `spec/support/repl_harness.py`).
+The `--smart` specs restore real NuGet packages the first time they run in
+a given environment, so they're slower than the rest of the suite.
 
 ## Safety
 

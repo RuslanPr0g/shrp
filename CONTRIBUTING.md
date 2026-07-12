@@ -25,7 +25,9 @@ Run the test suite ([ShellSpec](https://shellspec.info/); see `spec/`):
 
 This fetches ShellSpec itself if it's not already on your `PATH` — see the
 README's Testing section for details. `python3` is required for the
-pty-based tests covering the interactive REPL and `-p`.
+pty-based tests covering the interactive REPL, `-p`, and `--smart` (the
+`--smart` specs restore real NuGet packages the first time, so expect them
+to be slower).
 
 If you have [ShellCheck](https://www.shellcheck.net/) installed, run it
 against `install.sh` and `run-tests.sh` (it doesn't support zsh, so it

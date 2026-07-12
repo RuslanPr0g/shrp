@@ -43,15 +43,79 @@ that reads lines until a blank one, then runs them as one snippet.
 invoked from something that has a tty but isn't an interactive human
 (rare, but that's what the flag is for). Each REPL entry is a fresh
 `dotnet run`, so there is deliberately no variable persistence across
-entries — don't add a stateful scripting host (e.g. `dotnet-script`) to
-get that without discussing it first; it's a real dependency and
-architecture change, not a small addition.
+entries in this default REPL — it stays a stateless, dependency-light
+scratchpad. See "Smart interactive mode" below for the opt-in mode that
+does add persistence.
+
+## Smart interactive mode
+
+`cs --smart` (`_cs_repl_smart`) is a second, opt-in REPL, separate from
+`_cs_repl` above, for persistent variables and real Tab completion. This
+is the stateful-scripting-host addition earlier versions of this file
+warned against without discussion — it's now built, scoped narrowly:
+
+- **Opt-in only.** The default `cs` REPL is untouched: still stateless,
+  still zero extra dependencies. `--smart` is a deliberate, separate ask.
+- **Companion process**: `cs-roslyn-host.cs`, a long-lived file-based app
+  wrapping `Microsoft.CodeAnalysis.CSharp.Scripting`, started once per
+  `_cs_repl_smart` invocation via zsh's `coproc` and torn down (an `EXIT`
+  message, then `wait`) in an `always {}` block so it's cleaned up on every
+  exit path. `install.sh` ships it alongside `cs.zsh`; `cs.zsh` locates it
+  via `$SHRP_HOME` (same env var `install.sh` already uses), not a
+  path-resolution trick.
+- **Protocol**: a small sentinel-delimited line protocol over the coproc's
+  stdin/stdout (`RUN`/`COMPLETE`/`EXIT`, each request and response ending
+  in a literal `CSSMARTEOM` line) — deliberately not JSON, to keep the zsh
+  side simple. See `cs-roslyn-host.cs` and `_cs_smart_run`/
+  `_cs_smart_complete` in `cs.zsh`. `HandleRunAsync` in the host
+  temporarily redirects `Console.Out` to a `StringWriter` while running
+  user code and folds the captured text into the response body — without
+  this, a script's own `Console.WriteLine` would land on the same stdout
+  stream as the `OK`/sentinel lines and desync the client's read loop
+  (this actually happened; the visible symptom was the literal word `OK`
+  printed instead of the script's real output).
+- **Input uses `vared`, not `read -e`.** `read -e` was tried first and
+  silently fails to populate its target variable on this zsh (reproduced
+  interactively, not just in this repo) — `vared` is what actually works
+  and is the standard way to get a Tab-bindable ZLE buffer into a shell
+  variable. Ctrl-D has no free EOF signal under `vared` the way plain
+  `read` gives it, so there's a dedicated widget (`_cs_smart_eof_widget`)
+  faking it via a flag variable + `accept-line` on an empty buffer.
+- **Runs on Enter once brackets balance**, not on a blank line —
+  `_cs_smart_is_balanced` counts `()`/`{}`/`[]` across the accumulated
+  entry (it doesn't understand string/char literals; a bracket inside a
+  string quote can misjudge — accepted heuristic limitation, not a real
+  parser) and the read loop breaks out to run as soon as it balances. A
+  blank line still forces a run of whatever's accumulated regardless, as
+  an escape hatch. This differs from `_cs_repl`, which always waits for a
+  blank line — that made sense there since it batches a possibly
+  multi-statement snippet into a single `dotnet run`; `--smart` doesn't
+  need to batch, so waiting for a second blank Enter after every already-
+  complete statement was just extra friction.
+- **Tab completion** is bound only inside a temporary keymap
+  (`_cs_smart_keymap`, based on the plain built-in `emacs` keymap rather
+  than the live `main` one — copying `main` would also drag in whatever
+  the user's own zsh plugins bound there, e.g. `zsh-autosuggestions`
+  ghost-text, which showed up during testing and was confusing — then
+  linked in via `bindkey -A ... main` and restored from a saved copy of
+  the real `main` on exit) so it doesn't leak into the rest of the user's
+  shell. It inserts the single unambiguous suggestion at the cursor, or
+  lists multiple via `zle -M` — no prefix-replacement yet.
+- **No auto-semicolon in `--smart`.** Unlike `_cs_repl`, a bare expression
+  like `x + 1` is a legal value-yielding statement in Roslyn's scripting
+  model; forcing a trailing `;` onto it turns it into an illegal C#
+  statement (`CS0201`) instead of something that prints `=> 6`. Don't add
+  the auto-semicolon call back into `_cs_repl_smart`.
+- Still don't reintroduce `rm`/cleanup logic for the temp-file-writing
+  parts of `cs`/`_cs_repl` — that principle above is unrelated to killing
+  the coproc, which is a process, not a file.
 
 ## Auto-semicolon
 
 `_cs_add_semicolon_if_missing` appends `;` to a single-line snippet that
 doesn't already end in `;`, `{`, or `}` — used by `cs` (inline/piped) and
-`_cs_repl` (single-line entries only). Multi-line input is detected by
+`_cs_repl` (single-line entries only, and *not* `_cs_repl_smart` — see
+"Smart interactive mode" above for why). Multi-line input is detected by
 the presence of a newline and left untouched on purpose: inserting a
 semicolon in the wrong place in a multi-statement snippet would silently
 change behavior instead of giving a compiler error. Don't extend this to
@@ -106,14 +170,20 @@ is no separate `test/` directory; don't recreate one.
 
 ## Files
 
-- `cs.zsh` — the `cs` function and `_cs_repl` (interactive mode)
-- `install.sh` — installer (downloads or copies `cs.zsh`, wires `.zshrc`)
+- `cs.zsh` — the `cs` function, `_cs_repl` (default interactive mode), and
+  `_cs_repl_smart`/`_cs_smart_run`/`_cs_smart_complete`/
+  `_cs_smart_eof_widget` (smart interactive mode)
+- `cs-roslyn-host.cs` — long-lived Roslyn scripting host backing `cs --smart`
+- `install.sh` — installer (downloads or copies `cs.zsh` and
+  `cs-roslyn-host.cs`, wires `.zshrc`)
 - `run-tests.sh` — fetches/runs ShellSpec; what CI and contributors call
 - `.shellspec` — ShellSpec config (`--shell zsh`, etc.)
 - `spec/cs_spec.sh` — the test suite
 - `spec/spec_helper.sh` — ShellSpec's required helper file (currently empty)
 - `spec/support/repl_harness.py` — pty driver used by specs to test the
-  REPL and `-p`
+  REPL, `-p`, and `--smart` (the latter needs `REPL_HARNESS_INTERACTIVE=1`
+  so zsh initializes zle/vared, and a `RAW:`-prefixed input line for
+  sending un-terminated keystrokes like Tab)
 - `.github/workflows/ci.yml` — ShellCheck (`install.sh`, `run-tests.sh`;
   ShellCheck doesn't support zsh, and `spec/*.sh` are ShellSpec DSL, not
   standalone scripts) + `run-tests.sh` on a runner with dotnet 10

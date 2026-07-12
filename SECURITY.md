@@ -4,6 +4,11 @@
 but it does execute arbitrary code by design (that's the point of `cs`) and
 has previously had scrutiny around temp-file handling.
 
+`cs --smart` additionally restores several `Microsoft.CodeAnalysis.*` NuGet
+packages on first run (declared via `#:package` in `cs-roslyn-host.cs`,
+same trust model as any `dotnet run` file with package references) — same
+`nuget.org` trust boundary as `dotnet` itself, nothing shrp-specific.
+
 ## Reporting a vulnerability
 
 If you find a security issue — e.g. a way `cs` could be tricked into
