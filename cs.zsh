@@ -6,33 +6,14 @@
 #   cs <<'EOF' ... EOF              # heredoc for multiline code
 #   cs script.cs                    # run an existing .cs file
 #   cs -h | --help                  # show help
-# Deletes $1 only if it is provably the scratch dir this script created:
-#  - non-empty path, matches our cs.XXXXXX prefix under the temp base
-#  - a real directory, not a symlink
-#  - owned by the current user
-#  - resolves (realpath) to a location still under the temp base
-# Cleanup is non-recursive by design: remove the one file we wrote, then
-# rmdir. Anything unexpected inside the dir means we leave it alone and
-# say so, rather than reach for rm -rf.
-_cs_safe_rm_tmpdir() {
-  emulate -L zsh
-  local d="$1" base="${2:-${TMPDIR:-/tmp}}" rd rb
-  base="${base%/}"
-  [[ -n "$d" && -n "$base" ]] || return 0
-  [[ "$d" == "$base"/cs.??????* ]] || return 0
-  [[ -d "$d" && ! -L "$d" ]] || return 0
-  [[ -O "$d" ]] || return 0
-  rd="${d:A}" rb="${base:A}"
-  [[ -n "$rd" && -n "$rb" && "$rd" == "$rb"/cs.?????? ]] || return 0
-  rm -f -- "$d/main.cs"
-  if ! rmdir -- "$d" 2>/dev/null; then
-    print -u2 "cs: temp dir $d contains unexpected files; not removing it"
-  fi
-}
-
+#
+# Snippets are written to a uniquely-named file in $TMPDIR (or /tmp) and
+# left there — no cleanup, no deletion logic. The files are tiny and
+# /tmp is typically tmpfs or swept on reboot, so deleting them isn't
+# worth any risk of touching the wrong path.
 cs() {
   emulate -L zsh
-  local tmpdir code file cleanup=1 exit_code tmpbase
+  local code file exit_code
 
   if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     cat <<'USAGE'
@@ -57,31 +38,21 @@ USAGE
 
   if [[ $# -eq 1 && -f "$1" && "$1" == *.cs ]]; then
     file="$1"
-    cleanup=0
-  elif [[ $# -gt 0 ]]; then
-    code="$*"
-  elif [[ ! -t 0 ]]; then
-    code="$(cat)"
   else
-    print -u2 "cs: no code supplied. Run 'cs --help' for usage."
-    return 64
-  fi
+    if [[ $# -gt 0 ]]; then
+      code="$*"
+    elif [[ ! -t 0 ]]; then
+      code="$(cat)"
+    else
+      print -u2 "cs: no code supplied. Run 'cs --help' for usage."
+      return 64
+    fi
 
-  if [[ $cleanup -eq 1 ]]; then
-    tmpbase="${TMPDIR:-/tmp}"
-    tmpdir="$(mktemp -d "${tmpbase%/}/cs.XXXXXX")" || {
-      print -u2 "cs: failed to create temp directory"
+    file="$(mktemp "${TMPDIR:-/tmp}/cs.XXXXXX.cs")" || {
+      print -u2 "cs: failed to create temp file"
       return 1
     }
-    # Belt-and-braces: confirm mktemp actually gave us what we asked for
-    # before wiring it into the cleanup trap.
-    if [[ "$tmpdir" != "${tmpbase%/}"/cs.??????* || ! -d "$tmpdir" || -L "$tmpdir" ]]; then
-      print -u2 "cs: unexpected temp directory from mktemp, refusing to continue"
-      return 1
-    fi
-    file="$tmpdir/main.cs"
     print -r -- "$code" > "$file"
-    trap '_cs_safe_rm_tmpdir "$tmpdir" "$tmpbase"' EXIT INT TERM
   fi
 
   dotnet run "$file"

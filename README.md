@@ -65,18 +65,13 @@ Called with no arguments and nothing piped in, `cs` prints usage instead of hang
 
 ## How it works
 
-`cs` writes your snippet to `main.cs` inside a fresh `mktemp` directory, runs `dotnet run <file>`, streams the output, and cleans up — including on Ctrl-C. Passing an existing `.cs` file skips the temp dir entirely and runs the file in place (and never deletes it).
+`cs` writes your snippet to a uniquely-named file (`$TMPDIR/cs.XXXXXX.cs`, via `mktemp`) and runs `dotnet run <file>`, streaming the output straight through. Passing an existing `.cs` file skips the temp file entirely and runs your file in place.
 
-The first run of a given snippet includes compilation; dotnet caches build artifacts (in its own cache, not the temp dir), so repeated runs of the same file are fast.
+The first run of a given snippet includes compilation; dotnet caches build artifacts elsewhere, so repeated runs of the same file are fast.
 
 ## Safety
 
-Shell scripts that delete temp directories deserve suspicion, so cleanup here is deliberately paranoid:
-
-- **No recursive delete.** Cleanup removes exactly the one `main.cs` the script wrote, then `rmdir`s the directory. If anything unexpected is inside, it's left untouched and reported.
-- The cleanup helper refuses to act unless the path is a real directory (not a symlink), owned by the current user, matches the script's own `cs.XXXXXX` naming, and its **resolved** real path is still a `cs.XXXXXX` directory directly under the temp base — so empty strings, `/`, `$HOME`, `..` traversal, and symlink-swap races are all rejected.
-- The `mktemp` result is validated against the same rules before it's ever wired into the cleanup trap.
-- Your own `.cs` files (the `cs script.cs` form) never enter the cleanup path at all.
+`shrp` never deletes anything. Earlier versions tried to clean up their temp files, which meant shipping deletion logic (`rm`, directory ownership/symlink checks, `..`-traversal guards) for files a few hundred bytes in size that `/tmp` clears out on its own — most systems mount `/tmp` as tmpfs or sweep it on reboot. Deleting was pure risk for no real benefit, so it was removed instead of hardened further. `cs` only ever writes new files under `$TMPDIR`/`/tmp`; it never touches an existing path unless you explicitly pass it (`cs script.cs`).
 
 ## Uninstall
 
