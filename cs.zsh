@@ -6,9 +6,22 @@
 #   cs <<'EOF' ... EOF              # heredoc for multiline code
 #   cs script.cs                    # run an existing .cs file
 #   cs -h | --help                  # show help
+# Deletes $1 only if it looks exactly like a dir this script created:
+# non-empty, not a symlink, and rooted under our own cs.XXXXXX temp prefix.
+# Guards against rm -rf firing on "", "/", $HOME, or a swapped-out symlink.
+_cs_safe_rm_tmpdir() {
+  emulate -L zsh
+  local d="$1" base="${2:-${TMPDIR:-/tmp}}"
+  base="${base%/}"
+  [[ -n "$d" && -n "$base" ]] || return 0
+  [[ "$d" == "$base"/cs.??????* ]] || return 0
+  [[ -d "$d" && ! -L "$d" ]] || return 0
+  rm -rf -- "$d"
+}
+
 cs() {
   emulate -L zsh
-  local tmpdir code file cleanup=1 exit_code
+  local tmpdir code file cleanup=1 exit_code tmpbase
 
   if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     cat <<'USAGE'
@@ -44,22 +57,24 @@ USAGE
   fi
 
   if [[ $cleanup -eq 1 ]]; then
-    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/cs.XXXXXX")" || {
+    tmpbase="${TMPDIR:-/tmp}"
+    tmpdir="$(mktemp -d "${tmpbase%/}/cs.XXXXXX")" || {
       print -u2 "cs: failed to create temp directory"
       return 1
     }
+    # Belt-and-braces: confirm mktemp actually gave us what we asked for
+    # before wiring it into a trap that will rm -rf it.
+    if [[ "$tmpdir" != "${tmpbase%/}"/cs.??????* || ! -d "$tmpdir" || -L "$tmpdir" ]]; then
+      print -u2 "cs: unexpected temp directory from mktemp, refusing to continue"
+      return 1
+    fi
     file="$tmpdir/main.cs"
     print -r -- "$code" > "$file"
-    trap 'rm -rf "$tmpdir"' EXIT INT TERM
+    trap '_cs_safe_rm_tmpdir "$tmpdir" "$tmpbase"' EXIT INT TERM
   fi
 
   dotnet run "$file"
   exit_code=$?
-
-  if [[ $cleanup -eq 1 ]]; then
-    rm -rf "$tmpdir"
-    trap - EXIT INT TERM
-  fi
 
   return $exit_code
 }
