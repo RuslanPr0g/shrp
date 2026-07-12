@@ -34,6 +34,19 @@ a real reason, and if you do, keep in mind the standing bar: no recursive
 delete, and validate any path before it's ever removed. Simpler and safer to
 just not delete.
 
+## Interactive mode
+
+Bare `cs` in a terminal (no args, stdin is a tty) enters `_cs_repl`: a loop
+that reads lines until a blank one, then runs them as one snippet.
+`exit`/`quit`/Ctrl-D leave the loop. `cs -p` forces the old behavior
+(print usage, exit) instead of entering the REPL — useful when `cs` is
+invoked from something that has a tty but isn't an interactive human
+(rare, but that's what the flag is for). Each REPL entry is a fresh
+`dotnet run`, so there is deliberately no variable persistence across
+entries — don't add a stateful scripting host (e.g. `dotnet-script`) to
+get that without discussing it first; it's a real dependency and
+architecture change, not a small addition.
+
 ## Testing
 
 No test framework — it's one shell function. Before committing a change to
@@ -43,13 +56,17 @@ No test framework — it's one shell function. Before committing a change to
 zsh test/smoke.sh
 ```
 
-This exercises the inline/piped/file/help code paths. Extend it when you
-add behavior; don't add a heavier test framework for a project this size.
+This exercises the inline/piped/file/help/`-p` code paths, plus the
+interactive REPL via `test/repl_harness.py` (drives a real pty with
+Python's `pty` module, since `-t 0` can't be faked with a plain pipe — see
+that file for why). Extend the smoke test when you add behavior; don't add
+a heavier test framework for a project this size.
 
 ## Files
 
-- `cs.zsh` — the `cs` function
+- `cs.zsh` — the `cs` function and `_cs_repl` (interactive mode)
 - `install.sh` — installer (downloads or copies `cs.zsh`, wires `.zshrc`)
 - `test/smoke.sh` — manual/CI smoke tests
+- `test/repl_harness.py` — pty driver used by smoke.sh to test the REPL
 - `.github/workflows/ci.yml` — shellcheck (install.sh only; ShellCheck
   doesn't support zsh) + the smoke test on a runner with dotnet 10

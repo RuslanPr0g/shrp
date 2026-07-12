@@ -44,6 +44,9 @@ Then open a new terminal (or `source ~/.zshrc`) and you're set. The installer is
 ## Usage
 
 ```sh
+# Interactive REPL — bare `cs` in a terminal
+cs
+
 # Inline snippet
 cs 'Console.WriteLine(DateTime.Now);'
 
@@ -60,11 +63,38 @@ echo 'Console.WriteLine(Environment.OSVersion);' | cs
 # Run an existing file in place
 cs script.cs
 
+# Non-interactive: print usage instead of entering the REPL
+cs -p
+
 # Help
 cs --help
 ```
 
-Called with no arguments and nothing piped in, `cs` prints usage instead of hanging. The exit code of your program is passed through, so `cs '...' && next-thing` works as expected.
+### Interactive mode
+
+Run `cs` with no arguments in a terminal and you get a small REPL:
+
+```
+$ cs
+shrp interactive — blank line runs, Ctrl-D or 'exit' quits.
+cs> Console.WriteLine("hi");
+...
+hi
+
+cs>
+```
+
+Type one or more lines, then hit Enter on a blank line to run what you've
+typed. `exit`, `quit`, or Ctrl-D leaves the loop. Each entry is its own
+`dotnet run`, so variables don't carry over between snippets — it's a fast
+scratchpad, not a stateful session.
+
+If you want the old "print usage and exit" behavior instead of the REPL
+(e.g. for scripting against `cs` from a non-interactive-but-still-a-tty
+context), pass `-p`.
+
+The exit code of your program is passed through when running a single
+snippet, so `cs '...' && next-thing` works as expected.
 
 ## How it works
 

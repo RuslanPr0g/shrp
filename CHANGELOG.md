@@ -9,6 +9,14 @@ otherwise.
 
 ### Added
 
+- Interactive REPL: bare `cs` in a terminal now drops into a loop —
+  type lines, blank line runs them, `exit`/`quit`/Ctrl-D leaves. Each
+  entry is a fresh `dotnet run`, so there's no variable persistence
+  across entries.
+- `-p` flag: forces the old "print usage and exit" behavior instead of
+  entering the REPL.
+- `test/repl_harness.py`: pty-based test driver so the REPL is covered
+  by `test/smoke.sh`.
 - `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, this changelog, issue/PR
   templates, and CI (ShellCheck + smoke tests) for contributor workflow.
 
