@@ -14,6 +14,30 @@
 # /tmp is typically tmpfs or swept on reboot, so deleting them isn't
 # worth any risk of touching the wrong path.
 
+# If code is a single line missing a trailing terminator, append ';' so
+# 'Console.WriteLine("hi")' (forgotten semicolon) still runs. Left alone
+# if it's already multi-line (contains a newline) — guessing where a
+# semicolon belongs across statements isn't safe — or already ends with
+# ';', '{', or '}'.
+_cs_add_semicolon_if_missing() {
+  emulate -L zsh
+  local code="$1"
+  if [[ "$code" == *$'\n'* ]]; then
+    print -rn -- "$code"
+    return
+  fi
+  while [[ "$code" == *[[:space:]] ]]; do
+    code="${code%?}"
+  done
+  if [[ -n "$code" ]]; then
+    case "$code" in
+      *';'|*'{'|*'}') ;;
+      *) code+=';' ;;
+    esac
+  fi
+  print -rn -- "$code"
+}
+
 # Interactive loop: each snippet is its own `dotnet run`, so variables
 # don't persist between entries — it's a fast scratchpad, not a stateful
 # REPL. Blank line runs what's been typed so far; Ctrl-D or a lone
@@ -49,6 +73,10 @@ _cs_repl() {
     done
 
     (( ${#lines[@]} == 0 )) && continue
+
+    if (( ${#lines[@]} == 1 )); then
+      lines[1]="$(_cs_add_semicolon_if_missing "${lines[1]}")"
+    fi
 
     file="$(mktemp "${TMPDIR:-/tmp}/cs.XXXXXX.cs")" || {
       print -u2 "cs: failed to create temp file"
@@ -106,6 +134,8 @@ USAGE
       print -u2 "cs: no code supplied. Run 'cs --help' for usage."
       return 64
     fi
+
+    code="$(_cs_add_semicolon_if_missing "$code")"
 
     file="$(mktemp "${TMPDIR:-/tmp}/cs.XXXXXX.cs")" || {
       print -u2 "cs: failed to create temp file"

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Drives cs's interactive REPL through a real pty, since -t 0 (tty
 detection) can't be faked with a plain pipe. Used by test/smoke.sh.
+
+Usage: repl_harness.py <repo_dir> <input_line> [<input_line> ...]
+Each input_line is sent followed by Enter, in order.
 """
 import os
 import pty
@@ -9,6 +12,7 @@ import sys
 import time
 
 repo_dir = sys.argv[1]
+input_lines = sys.argv[2:]
 
 
 def run(cmd, inputs, timeout=15, gap=3.0):
@@ -44,9 +48,5 @@ def run(cmd, inputs, timeout=15, gap=3.0):
 
 
 cmd = f'source "{repo_dir}/cs.zsh"; cs'
-inputs = [
-    'Console.WriteLine("after blank");\n',
-    '\n',
-    'quit\n',
-]
+inputs = [line + "\n" for line in input_lines]
 print(run(cmd, inputs).decode(errors="replace"))

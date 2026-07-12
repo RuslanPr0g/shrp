@@ -22,6 +22,11 @@ otherwise.
 - `CLAUDE.md` rule: every change must get a changelog entry, and all docs
   (listed there) must be checked for needed updates before a change is
   considered done.
+- Auto-semicolon: a single-line snippet (inline, piped, or a one-line
+  REPL entry) that doesn't already end in `;`, `{`, or `}` now gets a
+  `;` appended automatically, so `cs 'Console.WriteLine(1+1)'` works
+  without remembering the trailing semicolon. Multi-line input is left
+  untouched.
 
 ### Changed
 

@@ -47,6 +47,16 @@ entries — don't add a stateful scripting host (e.g. `dotnet-script`) to
 get that without discussing it first; it's a real dependency and
 architecture change, not a small addition.
 
+## Auto-semicolon
+
+`_cs_add_semicolon_if_missing` appends `;` to a single-line snippet that
+doesn't already end in `;`, `{`, or `}` — used by `cs` (inline/piped) and
+`_cs_repl` (single-line entries only). Multi-line input is detected by
+the presence of a newline and left untouched on purpose: inserting a
+semicolon in the wrong place in a multi-statement snippet would silently
+change behavior instead of giving a compiler error. Don't extend this to
+guess across multiple lines.
+
 ## Before you finish any change
 
 Every change must be logged in `CHANGELOG.md` (under `Unreleased`, in

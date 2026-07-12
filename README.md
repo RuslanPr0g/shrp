@@ -47,8 +47,8 @@ Then open a new terminal (or `source ~/.zshrc`) and you're set. The installer is
 # Interactive REPL — bare `cs` in a terminal
 cs
 
-# Inline snippet
-cs 'Console.WriteLine(DateTime.Now);'
+# Inline snippet (trailing semicolon optional on a single line)
+cs 'Console.WriteLine(DateTime.Now)'
 
 # Multiline heredoc
 cs <<'EOF'
@@ -87,7 +87,8 @@ cs>
 Type one or more lines, then hit Enter on a blank line to run what you've
 typed. `exit`, `quit`, or Ctrl-D leaves the loop. Each entry is its own
 `dotnet run`, so variables don't carry over between snippets — it's a fast
-scratchpad, not a stateful session.
+scratchpad, not a stateful session. A single-line entry doesn't need a
+trailing semicolon (`cs> Console.WriteLine(6*7)` works as-is).
 
 If you want the old "print usage and exit" behavior instead of the REPL
 (e.g. for scripting against `cs` from a non-interactive-but-still-a-tty
@@ -99,6 +100,8 @@ snippet, so `cs '...' && next-thing` works as expected.
 ## How it works
 
 `cs` writes your snippet to a uniquely-named file (`$TMPDIR/cs.XXXXXX.cs`, via `mktemp`) and runs `dotnet run <file>`, streaming the output straight through. Passing an existing `.cs` file skips the temp file entirely and runs your file in place.
+
+If your snippet is a single line and doesn't already end in `;`, `{`, or `}`, a `;` is appended automatically. Multi-line snippets (heredoc, multi-line REPL entries, existing files) are never touched this way — guessing where a semicolon belongs across statements isn't safe, so a missing one there is still a normal compiler error.
 
 The first run of a given snippet includes compilation; dotnet caches build artifacts elsewhere, so repeated runs of the same file are fast.
 
